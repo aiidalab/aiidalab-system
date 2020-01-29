@@ -10,10 +10,12 @@ from IPython.display import display
 import ipywidgets as ipw
 from markdown import markdown
 
+from . import util
+
 logger = logging.getLogger(__name__)
 
 
-__all__ = ['AiidaLab']
+__all__ = ['AiidaLab', 'setup']
 
 
 class AiidaLabApp:
@@ -119,6 +121,53 @@ class AiidaLab:
 
     def _ipython_display_(self):
         display(self.home_widget())
+
+
+def setup(**kwargs):
+    """Custom setup function for AiiDA lab distributions."""
+    import setuptools
+    from setuptools.command.install import install
+    from pkg_resources import to_filename
+
+    apps = kwargs.pop('apps', [])
+    if apps:
+        install_requires = kwargs.pop('install_requires', [])
+        for app_path in apps:
+            metadata_file = Path(app_path) / 'metadata.json'
+            app_metadata = json.loads(metadata_file.read_text())
+            app_requirements = app_metadata.get('requires', [])
+            install_requires.extend(app_requirements)
+
+        kwargs['install_requires'] = list(set(install_requires))
+
+    class Install(install):
+
+        def run(self):
+            super().run()
+
+            if apps:
+                apps_base_dir = Path(sys.prefix) / 'apps'
+                for path, files in apps.items():
+                    if path.resolve() == Path.cwd():
+                        name = kwargs['name']
+                    else:
+                        name = str(path)
+
+                    app_base_dir = apps_base_dir / to_filename(name)
+                    self.announce(
+                        f"installing app {name} in "
+                        f"directory {app_base_dir}", level=2)
+                    for src in files:
+                        dst = app_base_dir / src
+                        self.mkpath(str(dst.parent))
+                        self.copy_file(str(src), str(dst))
+
+    return setuptools.setup(cmdclass={'install': Install}, **kwargs)
+
+
+def find_apps(**kwargs):
+    return {app_base_dir.resolve().relative_to(Path.cwd()):
+            list(files) for app_base_dir, files in util.find_apps(**kwargs)}
 
 
 if __name__ == '__main__':
