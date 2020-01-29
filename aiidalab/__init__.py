@@ -23,6 +23,9 @@ class AiidaLabApp:
 
     def __init__(self, path):
         self.path = Path(path).resolve()
+        if not self.path.is_dir():
+            raise self.InvalidAppDirectory(
+                f"App path is not a directory: {self.path}")
         self.metadata  # check existance and validity
         start_file = self.path / 'start'
         if not start_file.with_suffix('.md').exists() or \
