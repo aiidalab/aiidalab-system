@@ -55,6 +55,16 @@ class AiidaLabApp:
     def __str__(self):
         return f"{self.name} [{self.path}]"
 
+    def check_dependencies(self):
+        import pkg_resources
+        requires = pkg_resources.parse_requirements(
+            self.metadata.get('requires', []))
+        ws = pkg_resources.working_set
+        for req in requires:
+            match = ws.find(req)
+            if match is None:
+                logger.warning(f"Requirement '{req}' for {self} not met!")
+
     def _start_widget_py(self, app_base):
         start_py = self.path / 'start.py'
         mod = import_module(start_py)
@@ -68,11 +78,14 @@ class AiidaLabApp:
         return ipw.HTML(html.format(app_base=app_base))
 
     def start_widget(self, base):
+        self.check_dependencies()
+
         app_base = Path(os.path.relpath(self.path, base))
         if (self.path / 'start.py').exists():
             return self._start_widget_py(app_base=app_base)
         else:
             return self._start_widget_md(app_base=app_base)
+
 
 class AiidaLab:
 
