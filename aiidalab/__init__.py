@@ -56,7 +56,7 @@ class AiidaLabApp:
         return f"AiidaLabApp(path={self.path})"
 
     def __str__(self):
-        return f"{self.name} [{self.path}]"
+        return f"<{self.name} [{self.path}]>"
 
     def check_dependencies(self):
         import pkg_resources
