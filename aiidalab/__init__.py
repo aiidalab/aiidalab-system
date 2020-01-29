@@ -6,6 +6,7 @@ import logging
 from pathlib import Path
 from importlib import import_module
 
+from IPython.display import display
 import ipywidgets as ipw
 from markdown import markdown
 
@@ -99,6 +100,9 @@ class AiidaLab:
             base = os.getcwd()
         widgets = [app.start_widget(base=base) for app in self.find_apps()]
         return ipw.VBox(children=widgets)
+
+    def _ipython_display_(self):
+        display(self.home_widget())
 
 
 if __name__ == '__main__':
