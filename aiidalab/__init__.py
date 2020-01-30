@@ -203,11 +203,12 @@ def show_app_data_files(app_path, **kwargs):
     return find_app_data_files(app_path, '.', app_path, **kwargs)
 
 
-def find_app_paths(root=None):
-    if root is None:
-        root = Path.cwd()
-    else:
-        root = Path(root).resolve()
+def find_app_paths(root=None, recursive=True):
+    root = Path.cwd() if root is None else Path(root).resolve()
+    if recursive is True:
+        recursive = -1
+    elif recursive is False:
+        recursive = 1
 
     metadata_file = root / 'metadata.json'
     start_py = root / 'start.py'
@@ -216,14 +217,14 @@ def find_app_paths(root=None):
     if metadata_file.is_file() and \
             (start_py.is_file() or start_md.is_file()):
         yield root
-    else:
+    elif recursive != 0:
         for child in root.iterdir():
             if child.is_dir():
-                yield from find_app_paths(child)
+                yield from find_app_paths(child, recursive=recursive - 1)
 
 
-def find_apps(root=None):
-    for app_path in find_app_paths(root):
+def find_apps(where='.', recursive=False):
+    for app_path in find_app_paths(where, recursive=recursive):
         yield AiidaLabApp(app_path)
 
 
