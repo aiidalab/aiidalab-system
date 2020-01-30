@@ -39,6 +39,18 @@ lab  # equivalent to display(lab.home_widget())
 
 See also the `home.ipynb` notebook included with this repository.
 
+## Command line interface
+
+The AiiDA lab system application is intended to be executed programatically from within a Jupyter notebook, but you can use the `aiidalab` command application to perform certain operations directly from the command line.
+For example:
+```bash
+~$ aiidalab list
+AiidaLab(path=[PosixPath('/home/sadorf/apps'), PosixPath('/home/sadorf/.local/apps'), PosixPath('/home/sadorf/miniconda3/envs/test/apps')])
+Installed apps:
+- <My Multi App I [.../my_multi_app_i]>
+- <My Multi App II [.../my_multi_app_ii]>
+```
+
 ## Design Philosophy
 
 An AiiDA lab application is considered to be a user-facing frontend appliaction that is to be executed using the Jupyter web framework.
@@ -68,6 +80,14 @@ Alternatively, the instance will search for applications in the directories spec
 ### Manual installation
 
 An AiiDA lab app is installed by simply copying the app directory into one of the locations mentioned above.
+For example, assuming that we are launching the AiiDA lab instance from the home directory:
+```bash
+~/aiidalab$ mkdir ~/apps
+~/aiidalab$ cp -r apps/my-app ~/apps/
+```
+Then we can launch an Aiida Lab instance from the home directory:
+```bash
+~$ aiidalab launch
 
 ### Installation with pip (recommended)
 
