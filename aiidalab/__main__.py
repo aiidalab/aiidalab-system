@@ -4,13 +4,18 @@ from pprint import pformat
 from textwrap import indent
 from pathlib import Path
 
+from . import AiidaLab, show_app_data_files, to_filename
+from .util import fmt_data_files_for_setup_cfg
 
-@click.command()
+
+@click.group()
+def cli():
+    pass
+
+
+@cli.command(name='list')
 @click.option('--show-data-files', is_flag=True)
-def cli(show_data_files):
-    from aiidalab import AiidaLab, show_app_data_files, to_filename
-    from aiidalab.util import fmt_data_files_for_setup_cfg
-
+def list_(show_data_files):
     lab = AiidaLab()
     click.echo(lab)
 
