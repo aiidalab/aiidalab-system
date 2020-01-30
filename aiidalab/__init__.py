@@ -98,11 +98,17 @@ class AiidaLabApp:
                 "Missing requiements for {}:\n{}".format(
                     self, indent('\n'.join(map(str, missing_deps)), ' -')))
 
-        app_base = self.path.relative_to(base)
-        if (self.path / 'start.py').exists():
-            return self._start_widget_py(app_base=app_base)
+        try:
+            app_base = self.path.relative_to(base)
+        except ValueError:
+            return ipw.HTML(
+                f"Unable to launch app {self!r}, because the app path "
+                "is unreachable for this notebook instance.")
         else:
-            return self._start_widget_md(app_base=app_base)
+            if (self.path / 'start.py').exists():
+                return self._start_widget_py(app_base=app_base)
+            else:
+                return self._start_widget_md(app_base=app_base)
 
 
 class AiidaLab:
