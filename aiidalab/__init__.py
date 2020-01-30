@@ -64,10 +64,11 @@ class AiidaLabApp:
         return self.metadata['name']
 
     def __repr__(self):
-        return f"AiidaLabApp(path={self.path})"
+        return f"AiidaLabApp(path='{self.path}')"
 
     def __str__(self):
-        return f"<{self.name} [{self.path}]>"
+        truncated_path = Path('...', self.path.stem)
+        return f"<{self.name} [{truncated_path}]>"
 
     def find_missing_dependencies(self):
         requires = pkg_resources.parse_requirements(
