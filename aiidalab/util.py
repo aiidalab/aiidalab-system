@@ -2,6 +2,7 @@ __all__ = ['fmt_data_files_for_setup_cfg']
 
 
 def fmt_data_files_for_setup_cfg(data_files):
+    yield "[options.data_files]"
     for root, files in data_files:
         if len(files) == 1:
             yield f"{root} = {files[0]}"

@@ -8,6 +8,7 @@ import pkg_resources
 from pathlib import Path
 from importlib import import_module
 from collections import defaultdict
+from textwrap import indent
 
 from IPython.display import display
 import ipywidgets as ipw
@@ -68,14 +69,14 @@ class AiidaLabApp:
     def __str__(self):
         return f"<{self.name} [{self.path}]>"
 
-    def check_dependencies(self):
+    def find_missing_dependencies(self):
         requires = pkg_resources.parse_requirements(
             self.metadata.get('requires', []))
         ws = pkg_resources.working_set
         for req in requires:
             match = ws.find(req)
             if match is None:
-                logger.warning(f"Requirement '{req}' for {self} not met!")
+                yield req
 
     def _start_widget_py(self, app_base):
         start_py = self.path / 'start.py'
@@ -90,7 +91,11 @@ class AiidaLabApp:
         return ipw.HTML(html.format(app_base=app_base))
 
     def start_widget(self, base):
-        self.check_dependencies()
+        missing_deps = list(self.find_missing_dependencies())
+        if missing_deps:
+            logger.warning(
+                "Missing requiements for {}:\n{}".format(
+                    self, indent('\n'.join(map(str, missing_deps)), ' -')))
 
         app_base = self.path.relative_to(base)
         if (self.path / 'start.py').exists():

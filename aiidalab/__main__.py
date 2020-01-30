@@ -19,9 +19,16 @@ def cli(show_data_files):
         click.echo("Installed apps:")
         for app in apps:
             click.secho(f"- {app}", bold=True)
+            missing = list(app.find_missing_dependencies())
+            if missing:
+                click.secho("  Some app requirements are not met:", fg='red')
+            for req in app.find_missing_dependencies():
+                click.secho(f"  Requirement '{req}' not met!", fg='yellow')
             if show_data_files:
                 data_files = show_app_data_files(app.path)
-                click.secho(indent('\n'.join(fmt_data_files_for_setup_cfg(data_files)), '  '))
+                formatted = fmt_data_files_for_setup_cfg(data_files)
+                click.secho(indent('\n'.join(formatted), '  '))
+
 
 
 if __name__ == '__main__':
