@@ -1,0 +1,6 @@
+{
+  "name": "My App",
+  "requires": [
+    "attrs"
+  ]
+}
