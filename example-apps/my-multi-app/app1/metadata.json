@@ -1,0 +1,6 @@
+{
+  "name": "My Multi App I",
+  "requires": [
+    "attrs"
+  ]
+}
