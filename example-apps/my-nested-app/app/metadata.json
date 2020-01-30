@@ -1,0 +1,6 @@
+{
+  "name": "My Nested App",
+  "requires": [
+    "attrs"
+  ]
+}
