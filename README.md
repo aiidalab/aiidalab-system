@@ -85,9 +85,6 @@ For example, assuming that we are launching the AiiDA lab instance from the home
 ~/aiidalab$ mkdir ~/apps
 ~/aiidalab$ cp -r apps/my-app ~/apps/
 ```
-Then we can launch an Aiida Lab instance from the home directory:
-```bash
-~$ aiidalab launch
 
 ### Installation with pip (recommended)
 
