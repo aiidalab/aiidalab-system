@@ -30,7 +30,7 @@ class AiidaLabApp:
     class InvalidAppDirectory(TypeError):
         pass
 
-    def __init__(self, path):
+    def __init__(self, path, package=None):
         self._path = Path(path).resolve()
         if not self.path.is_dir():
             raise self.InvalidAppDirectory(
@@ -41,6 +41,7 @@ class AiidaLabApp:
                 start_file.with_suffix('.py').exists():
             raise self.InvalidAppDirectory(
                 f"Start file missing: {start_file}[.py|.md]")
+        self.package = package
 
     @property
     def path(self):
@@ -73,7 +74,8 @@ class AiidaLabApp:
 
     def __str__(self):
         truncated_path = Path('...', self.path.stem)
-        return f"<{self.name} [{truncated_path}]>"
+        package = '' if self.package is None else '|' + self.package
+        return f"<{self.name} [{truncated_path}{package}]>"
 
     def find_missing_dependencies(self):
         requires = pkg_resources.parse_requirements(
@@ -142,11 +144,14 @@ class AiidaLab:
         return f"{type(self).__name__}(path={self.path})"
 
     def find_apps(self):
+        cache = self._update_package_cache()
+        package_table = {Path(p): package
+                         for package, paths in cache.items() for p in paths}
         for apps_path in self.path:
             if apps_path.is_dir():
                 for app_path in find_app_paths(apps_path):
                     try:
-                        yield AiidaLabApp(app_path)
+                        yield AiidaLabApp(app_path, package=package_table.get(app_path))
                     except TypeError as error:
                         logger.warning(error)
 
