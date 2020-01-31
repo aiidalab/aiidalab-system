@@ -11,6 +11,7 @@ def cli():
     pass
 
 
+
 @cli.command(name='list',
              help="List all installed applications.")
 @click.option('--show-data-files', is_flag=True)
@@ -22,7 +23,7 @@ def list_(show_data_files):
     if apps:
         click.echo("Installed apps:")
         for app in apps:
-            click.secho(f"- {app}", bold=True)
+            click.secho(f"- {app.id[:6]}: {app} [{app.package}]", bold=True)
             missing = list(app.find_missing_dependencies())
             if missing:
                 click.secho("  Some app requirements are not met:", fg='red')
@@ -39,6 +40,17 @@ def list_(show_data_files):
 def install(name):
     lab = AiidaLab()
     lab.install_app(name)
+
+
+@cli.command()
+@click.argument('identifier')
+def uninstall(identifier):
+    lab = AiidaLab()
+    app = lab.get_app(identifier)
+    if app.package is None:
+        print("rm", app.path)
+    else:
+        print("python -m pip uninstall", app.package)
 
 
 if __name__ == '__main__':

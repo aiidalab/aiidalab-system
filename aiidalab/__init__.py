@@ -65,17 +65,23 @@ class AiidaLabApp:
             raise self.InvalidAppDirectory(
                 f"Unknown error accessing metadata file: {error}") from error
 
-    @property
-    def name(self):
-        return self.metadata['name']
 
     def __repr__(self):
         return f"AiidaLabApp(path='{self.path}')"
 
+    @property
+    def name(self):
+        return self.metadata['name']
+
     def __str__(self):
-        truncated_path = Path('...', self.path.stem)
-        package = '' if self.package is None else '|' + self.package
-        return f"<{self.name} [{truncated_path}{package}]>"
+        return self.name
+
+    @property
+    def id(self):
+        import hashlib
+        m = hashlib.sha256()
+        m.update(str(self.path).encode('utf-8'))
+        return m.hexdigest()
 
     def find_missing_dependencies(self):
         requires = pkg_resources.parse_requirements(
@@ -154,6 +160,27 @@ class AiidaLab:
                         yield AiidaLabApp(app_path, package=package_table.get(app_path))
                     except TypeError as error:
                         logger.warning(error)
+
+    def find_app_by_id(self, app_id):
+        candidates = []
+        for app in self.find_apps():
+            if app.id == app_id:
+                return app
+            elif app.id.startswith(app_id):
+                candidates.append(app)
+
+        if len(candidates) == 1:
+            return candidates[0]
+        elif len(candidates) > 1:
+            raise ValueError(app_id)
+        else:
+            raise KeyError(app_id)
+
+    def get_app(self, identifier):
+        try:
+            return AiidaLabApp(identifier)
+        except AiidaLabApp.InvalidAppDirectory:
+            return self.find_app_by_id(identifier)
 
     def home_widget(self, base=None):
         if base is None:
