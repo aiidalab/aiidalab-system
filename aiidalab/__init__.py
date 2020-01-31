@@ -208,7 +208,9 @@ class AiidaLab:
 
         # Update the app paths for each installed package.
         to_update = [p for p in packages if p not in cache]
-        for package in tqdm(to_update, 'update-package-cache'):
+        if len(to_update) > 10:
+            to_update = tqdm(to_update, 'update-package-cache')
+        for package in to_update:
             if package not in cache:
                 paths = util.find_app_paths_for_package(package.split('=')[0])
                 cache[package] = [str(p) for p in paths]
