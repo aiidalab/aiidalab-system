@@ -32,8 +32,8 @@ class AiidaLabApp:
                 f"App path is not a directory: {self.path}")
         self.metadata  # check existance and validity
         start_file = self.path / 'start'
-        if not start_file.with_suffix('.md').exists() or \
-                start_file.with_suffix('.py').exists():
+        if not (start_file.with_suffix('.md').exists() or \
+                start_file.with_suffix('.py').exists()):
             raise self.InvalidAppDirectory(
                 f"Start file missing: {start_file}[.py|.md]")
 
