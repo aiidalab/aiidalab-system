@@ -96,3 +96,20 @@ If these requirements are to be installed automatically, they must also be decla
 
 The `aiidalab` package provides convenience functions to simplify this process.
 See the example app distributions within the `example-apps/` directory for detailed information.
+
+### Uninstallation / removal
+
+To remove an app from the system, simply delete the directory containing the app, however to remove all files that might have been installed throught he installation, use pip:
+
+```bash
+$ python -m pip uninstall my-app
+```
+
+### Distribution
+
+Using this format it is possible to build Python distribution packages:
+
+```bash
+~/my-app$ python setup.py bdist_wheel
+```
+will generate a file called similar to `my_app-0.1-py3-none-any.whl` which can be installed with `python -m pip install my_app-0.1-py3-none-any.whl`.
