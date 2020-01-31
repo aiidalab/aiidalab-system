@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 import click
-from pprint import pformat
 from textwrap import indent
-from pathlib import Path
 
-from . import AiidaLab, show_app_data_files, to_filename
+from . import AiidaLab, show_app_data_files
 from .util import fmt_data_files_for_setup_cfg
 
 
@@ -13,7 +11,8 @@ def cli():
     pass
 
 
-@cli.command(name='list')
+@cli.command(name='list',
+             help="List all installed applications.")
 @click.option('--show-data-files', is_flag=True)
 def list_(show_data_files):
     lab = AiidaLab()
@@ -34,6 +33,12 @@ def list_(show_data_files):
                 formatted = fmt_data_files_for_setup_cfg(data_files)
                 click.secho(indent('\n'.join(formatted), '  '))
 
+
+@cli.command()
+@click.argument('name')
+def install(name):
+    lab = AiidaLab()
+    lab.install_app(name)
 
 
 if __name__ == '__main__':
