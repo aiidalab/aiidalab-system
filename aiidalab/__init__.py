@@ -4,20 +4,25 @@ import sys
 import site
 import json
 import logging
+import subprocess
 import pkg_resources
 from pathlib import Path
 from importlib import import_module
 from collections import defaultdict
 from textwrap import indent
 
+from tqdm import tqdm
+from markdown import markdown
 from IPython.display import display
 import ipywidgets as ipw
-from markdown import markdown
+
+from . import util
+from .util import is_app_path
 
 logger = logging.getLogger(__name__)
 
 
-__all__ = ['AiidaLab', 'setup']
+__all__ = ['AiidaLab', 'setup', 'find_apps', 'is_app_path']
 
 
 class AiidaLabApp:
@@ -125,9 +130,11 @@ class AiidaLab:
             if env_path is None:
                 self.path = self.DEFAULT_PATHS
             else:
-                self.path = [Path(p).expanduser().resolve() for p in env_path.split(':')]
+                self.path = [Path(p).expanduser().resolve()
+                             for p in env_path.split(':')]
         elif isinstance(path, str):
-            self.path = [Path(p).expanduser().resolve() for p in path.split(':')]
+            self.path = [Path(p).expanduser().resolve()
+                         for p in path.split(':')]
         else:
             self.path = [Path(p).expanduser().resolve() for p in path]
 
@@ -151,6 +158,44 @@ class AiidaLab:
 
     def _ipython_display_(self):
         display(self.home_widget())
+
+    def _update_package_cache(self):
+        try:
+            with open(Path.home() / 'aiidalab_package_cache.json') as file:
+                cache = json.load(file)
+        except FileNotFoundError:
+            cache = dict()
+
+        packages = [p['name'] + '=' + p['version']
+                    for p in util.list_packages()]
+
+        # Remove packages from cache that are no longer installed.
+        for package in cache:
+            if package not in packages:
+                del cache[package]
+
+        # Update the app paths for each installed package.
+        to_update = [p for p in packages if p not in cache]
+        for package in tqdm(to_update, 'update-package-cache'):
+            if package not in cache:
+                paths = util.find_app_paths_for_package(package.split('=')[0])
+                cache[package] = [str(p) for p in paths]
+
+        serialized_cache = json.dumps(cache)
+        with open(Path.home() / 'aiidalab_package_cache.json', 'w') as file:
+            file.write(serialized_cache)
+
+        return cache
+
+    def install_app(self, name):
+        "Use pip to install an app."
+        try:
+            subprocess.run(['python', '-m', 'pip', 'install', name])
+        except SystemExit as error:
+            raise RuntimeError(
+                f"Failed to install app package '{name}': {error}.")
+        else:
+            self._update_package_cache()
 
 
 TEXT_FILES = ['*.json', '*.md', '*.html']
@@ -201,7 +246,7 @@ def find_app_data_files(app_path,  # maybe in the future add:', /'
     for parent, files in data_files.items():
         ret.append(
             (str((install_path / parent)),
-            [str(p.resolve().relative_to(base)) for p in files]))
+             [str(p.resolve().relative_to(base)) for p in files]))
 
     return ret
 
@@ -217,12 +262,7 @@ def find_app_paths(root=None, recursive=True):
     elif recursive is False:
         recursive = 1
 
-    metadata_file = root / 'metadata.json'
-    start_py = root / 'start.py'
-    start_md = root / 'start.md'
-
-    if metadata_file.is_file() and \
-            (start_py.is_file() or start_md.is_file()):
+    if is_app_path(root):
         yield root
     elif recursive != 0:
         for child in root.iterdir():
