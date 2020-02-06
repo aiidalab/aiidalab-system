@@ -1,6 +1,3 @@
 {
-  "name": "My App",
-  "requires": [
-    "attrs"
-  ]
+  "name": "My App"
 }

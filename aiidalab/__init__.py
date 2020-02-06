@@ -4,20 +4,25 @@ import sys
 import site
 import json
 import logging
+import subprocess
 import pkg_resources
 from pathlib import Path
 from importlib import import_module
 from collections import defaultdict
 from textwrap import indent
 
+from tqdm import tqdm
+from markdown import markdown
 from IPython.display import display
 import ipywidgets as ipw
-from markdown import markdown
+
+from . import util
+from .util import is_app_path
 
 logger = logging.getLogger(__name__)
 
 
-__all__ = ['AiidaLab', 'setup']
+__all__ = ['AiidaLab', 'setup', 'find_apps', 'is_app_path']
 
 
 class AiidaLabApp:
@@ -59,16 +64,23 @@ class AiidaLabApp:
             raise self.InvalidAppDirectory(
                 f"Unknown error accessing metadata file: {error}") from error
 
-    @property
-    def name(self):
-        return self.metadata['name']
 
     def __repr__(self):
         return f"AiidaLabApp(path='{self.path}')"
 
+    @property
+    def name(self):
+        return self.metadata['name']
+
     def __str__(self):
-        truncated_path = Path('...', self.path.stem)
-        return f"<{self.name} [{truncated_path}]>"
+        return self.name
+
+    @property
+    def id(self):
+        import hashlib
+        m = hashlib.sha256()
+        m.update(str(self.path).encode('utf-8'))
+        return m.hexdigest()
 
     def find_missing_dependencies(self):
         requires = pkg_resources.parse_requirements(
@@ -125,9 +137,11 @@ class AiidaLab:
             if env_path is None:
                 self.path = self.DEFAULT_PATHS
             else:
-                self.path = [Path(p).expanduser().resolve() for p in env_path.split(':')]
+                self.path = [Path(p).expanduser().resolve()
+                             for p in env_path.split(':')]
         elif isinstance(path, str):
-            self.path = [Path(p).expanduser().resolve() for p in path.split(':')]
+            self.path = [Path(p).expanduser().resolve()
+                         for p in path.split(':')]
         else:
             self.path = [Path(p).expanduser().resolve() for p in path]
 
@@ -143,6 +157,27 @@ class AiidaLab:
                     except TypeError as error:
                         logger.warning(error)
 
+    def find_app_by_id(self, app_id):
+        candidates = []
+        for app in self.find_apps():
+            if app.id == app_id:
+                return app
+            elif app.id.startswith(app_id):
+                candidates.append(app)
+
+        if len(candidates) == 1:
+            return candidates[0]
+        elif len(candidates) > 1:
+            raise ValueError(app_id)
+        else:
+            raise KeyError(app_id)
+
+    def get_app(self, identifier):
+        try:
+            return AiidaLabApp(identifier)
+        except AiidaLabApp.InvalidAppDirectory:
+            return self.find_app_by_id(identifier)
+
     def home_widget(self, base=None):
         if base is None:
             base = os.getcwd()
@@ -151,6 +186,14 @@ class AiidaLab:
 
     def _ipython_display_(self):
         display(self.home_widget())
+
+    def install_app(self, name):
+        "Use pip to install an app."
+        try:
+            subprocess.run(['python', '-m', 'pip', 'install', name])
+        except SystemExit as error:
+            raise RuntimeError(
+                f"Failed to install app package '{name}': {error}.")
 
 
 TEXT_FILES = ['*.json', '*.md', '*.html']
@@ -201,7 +244,7 @@ def find_app_data_files(app_path,  # maybe in the future add:', /'
     for parent, files in data_files.items():
         ret.append(
             (str((install_path / parent)),
-            [str(p.resolve().relative_to(base)) for p in files]))
+             [str(p.resolve().relative_to(base)) for p in files]))
 
     return ret
 
@@ -217,12 +260,7 @@ def find_app_paths(root=None, recursive=True):
     elif recursive is False:
         recursive = 1
 
-    metadata_file = root / 'metadata.json'
-    start_py = root / 'start.py'
-    start_md = root / 'start.md'
-
-    if metadata_file.is_file() and \
-            (start_py.is_file() or start_md.is_file()):
+    if is_app_path(root):
         yield root
     elif recursive != 0:
         for child in root.iterdir():
