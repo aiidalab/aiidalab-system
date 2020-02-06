@@ -30,7 +30,7 @@ class AiidaLabApp:
     class InvalidAppDirectory(TypeError):
         pass
 
-    def __init__(self, path, package=None):
+    def __init__(self, path):
         self._path = Path(path).resolve()
         if not self.path.is_dir():
             raise self.InvalidAppDirectory(
@@ -41,7 +41,6 @@ class AiidaLabApp:
                 start_file.with_suffix('.py').exists():
             raise self.InvalidAppDirectory(
                 f"Start file missing: {start_file}[.py|.md]")
-        self.package = package
 
     @property
     def path(self):
@@ -150,14 +149,11 @@ class AiidaLab:
         return f"{type(self).__name__}(path={self.path})"
 
     def find_apps(self):
-        cache = self._update_package_cache()
-        package_table = {Path(p): package
-                         for package, paths in cache.items() for p in paths}
         for apps_path in self.path:
             if apps_path.is_dir():
                 for app_path in find_app_paths(apps_path):
                     try:
-                        yield AiidaLabApp(app_path, package=package_table.get(app_path))
+                        yield AiidaLabApp(app_path)
                     except TypeError as error:
                         logger.warning(error)
 
@@ -191,36 +187,6 @@ class AiidaLab:
     def _ipython_display_(self):
         display(self.home_widget())
 
-    def _update_package_cache(self):
-        try:
-            with open(Path.home() / 'aiidalab_package_cache.json') as file:
-                cache = json.load(file)
-        except FileNotFoundError:
-            cache = dict()
-
-        packages = [p['name'] + '=' + p['version']
-                    for p in util.list_packages()]
-
-        # Remove packages from cache that are no longer installed.
-        for package in cache:
-            if package not in packages:
-                del cache[package]
-
-        # Update the app paths for each installed package.
-        to_update = [p for p in packages if p not in cache]
-        if len(to_update) > 10:
-            to_update = tqdm(to_update, 'update-package-cache')
-        for package in to_update:
-            if package not in cache:
-                paths = util.find_app_paths_for_package(package.split('=')[0])
-                cache[package] = [str(p) for p in paths]
-
-        serialized_cache = json.dumps(cache)
-        with open(Path.home() / 'aiidalab_package_cache.json', 'w') as file:
-            file.write(serialized_cache)
-
-        return cache
-
     def install_app(self, name):
         "Use pip to install an app."
         try:
@@ -228,8 +194,6 @@ class AiidaLab:
         except SystemExit as error:
             raise RuntimeError(
                 f"Failed to install app package '{name}': {error}.")
-        else:
-            self._update_package_cache()
 
 
 TEXT_FILES = ['*.json', '*.md', '*.html']

@@ -9,6 +9,7 @@ setup(
         'ipywidgets~=7.5',
         'Markdown~=3.1',
         'Click~=7.0',
+        'tqdm~=4.42',
         ],
     entry_points={
         'console_scripts': [
