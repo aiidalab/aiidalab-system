@@ -100,7 +100,7 @@ def package_cache():
             observer.schedule(event_handler, path)
 
     class Cache:
-        
+
         @staticmethod
         def find_package(app):
             cache = mem_cached_package_cache()

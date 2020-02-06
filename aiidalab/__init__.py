@@ -11,12 +11,10 @@ from importlib import import_module
 from collections import defaultdict
 from textwrap import indent
 
-from tqdm import tqdm
 from markdown import markdown
 from IPython.display import display
 import ipywidgets as ipw
 
-from . import util
 from .util import is_app_path
 
 logger = logging.getLogger(__name__)
@@ -37,7 +35,7 @@ class AiidaLabApp:
                 f"App path is not a directory: {self.path}")
         self.metadata  # check existance and validity
         start_file = self.path / 'start'
-        if not (start_file.with_suffix('.md').exists() or \
+        if not (start_file.with_suffix('.md').exists() or
                 start_file.with_suffix('.py').exists()):
             raise self.InvalidAppDirectory(
                 f"Start file missing: {start_file}[.py|.md]")
@@ -63,7 +61,6 @@ class AiidaLabApp:
         except Exception as error:
             raise self.InvalidAppDirectory(
                 f"Unknown error accessing metadata file: {error}") from error
-
 
     def __repr__(self):
         return f"AiidaLabApp(path='{self.path}')"
