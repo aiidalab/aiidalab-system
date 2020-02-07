@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 import click
-from textwrap import indent
 
-from . import AiidaLab, show_app_data_files
-from .util import fmt_data_files_for_setup_cfg, package_cache, list_packages
+from . import AiidaLab, find_app_data_files
+from aiidalab.app_management import CondaAppManager
+from .util import fmt_data_files_for_setup_cfg
 
 
 @click.group()
@@ -19,47 +19,14 @@ def list_(show_data_files):
     click.echo(lab)
 
     apps = list(lab.find_apps())
-    pkg_cache = package_cache()
-
-    with package_cache() as pkg_cache:
-        click.echo("check for updates...")
-        outdated_packages = {pkg.pop('name'): pkg
-                             for pkg in list_packages(outdated=True)}
-
-        if apps:
-            click.echo("Installed apps:")
-            for app in apps:
-                print('app', app)
-                package = pkg_cache.find_package(app)
-                if package is None:
-                    package = "manual install"
-                    msg_version = ''
-
-                elif package.split('==')[0] in outdated_packages:
-                    info = outdated_packages[package]
-                    msg_version = click.style(
-                        f"Update available! Latest "
-                        f"version:{info['latest_version']} "
-                        f"your version: {info['version']}",
-                        fg='red')
-                else:
-                    msg_version = ''
-
-                click.secho(
-                    f"- {app.id[:6]}: '{app}' from "
-                    f"'{package}' {msg_version}", bold=True)
-
-                missing = list(app.find_missing_dependencies())
-                if missing:
-                    click.secho(
-                        "  Some app requirements are not met:", fg='red')
-                for req in app.find_missing_dependencies():
-                    click.secho(f"  Requirement '{req}' not met!", fg='yellow')
-
-                if show_data_files:
-                    data_files = show_app_data_files(app.path)
-                    formatted = fmt_data_files_for_setup_cfg(data_files)
-                    click.secho(indent('\n'.join(formatted), '  '))
+    app_manager = CondaAppManager()
+    for app in apps:
+        package = app_manager.package_map.get(app.path)
+        print(app, package)
+        if show_data_files:
+            files = find_app_data_files(app.path)
+            files_formatted = fmt_data_files_for_setup_cfg(files)
+            print('\n'.join(files_formatted))
 
 
 @cli.command()

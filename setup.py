@@ -10,6 +10,7 @@ setup(
         'Markdown~=3.1',
         'Click~=7.0',
         'tqdm~=4.42',
+        'cached-property~=1.5',
         ],
     entry_points={
         'console_scripts': [
